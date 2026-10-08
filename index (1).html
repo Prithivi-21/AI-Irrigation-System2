@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI-Based Smart Irrigation Management System</title>
+  <style>
+/* ========== DESIGN TOKENS (colours) ========== */
+:root {
+  --bg: #f6f8f1;          /* pale field green */
+  --bg-alt: #e9efdc;      /* sprout */
+  --surface: #ffffff;
+  --text: #1f2a1c;        /* dark leaf */
+  --muted: #55634f;
+  --green: #2f6b2f;       /* crop green */
+  --green-dark: #1d4a21;
+  --soil: #6b4a2b;        /* soil brown */
+  --wheat: #e2b84b;       /* wheat gold */
+  --on: #2f6b2f;
+  --off: #b3402a;
+  --border: #d3dcc4;
+  --radius: 10px;
+}
+
+/* Dark mode follows the device setting */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131a12; --bg-alt: #1a2418; --surface: #202c1d;
+    --text: #eef2e6; --muted: #aab8a0; --green: #7fc47a;
+    --green-dark: #5fa85a; --border: #35462f; --on: #7fc47a; --off: #ef8a72;
+  }
+}
+
+/* ========== BASE ========== */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; scroll-padding-top: 70px; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.6;
+}
+h1, h2, h3 { font-family: Georgia, "Times New Roman", serif; line-height: 1.2; }
+h2 { font-size: 1.9rem; margin-bottom: 1.5rem; }
+h3 { font-size: 1.15rem; margin-bottom: .5rem; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--wheat); outline-offset: 2px; }
+
+.container { width: min(1100px, 92%); margin-inline: auto; }
+.narrow { width: min(640px, 92%); }
+.section { padding: 4rem 0; }
+.section.container, .section.narrow { padding-inline: 0; }
+.alt { background: var(--bg-alt); }
+
+/* ========== NAVIGATION ========== */
+.site-header {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--green-dark); color: #fff;
+}
+.nav { width: min(1100px, 92%); margin-inline: auto; display: flex;
+  align-items: center; justify-content: space-between; padding: .8rem 0; flex-wrap: wrap; }
+.brand { font-family: Georgia, serif; font-size: 1.25rem; font-weight: bold; text-decoration: none; }
+.nav-links { display: flex; gap: 1.5rem; list-style: none; }
+.nav-links a { text-decoration: none; opacity: .9; }
+.nav-links a:hover { opacity: 1; text-decoration: underline; text-underline-offset: 4px; }
+.nav-toggle { display: none; background: none; color: #fff; border: 1px solid #fff8;
+  border-radius: 6px; padding: .35rem .8rem; font-size: 1rem; cursor: pointer; }
+
+/* ========== HERO ========== */
+/* Parallel furrow lines in the background suggest ploughed rows */
+.hero {
+  color: #fff; padding: 6rem 0 5rem;
+  background:
+    repeating-linear-gradient(105deg, transparent 0 38px, rgba(226,184,75,.14) 38px 41px),
+    linear-gradient(160deg, var(--green-dark), var(--soil));
+}
+.hero h1 { font-size: clamp(2rem, 5vw, 3.4rem); max-width: 16em; margin-bottom: 1.2rem; }
+.lead { max-width: 38em; font-size: 1.1rem; margin-bottom: 2rem; opacity: .95; }
+
+/* ========== BUTTON ========== */
+.btn {
+  display: inline-block; background: var(--wheat); color: #2b2108; border: 0;
+  padding: .8rem 1.6rem; border-radius: var(--radius); font-size: 1rem;
+  font-weight: 600; cursor: pointer; text-decoration: none;
+  transition: transform .15s, background .15s;
+}
+.btn:hover { background: #f0c95c; transform: translateY(-1px); }
+
+/* ========== CARDS / GRIDS ========== */
+.grid { display: grid; gap: 1.2rem; }
+.grid-4 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-left: 5px solid var(--green); border-radius: var(--radius); padding: 1.3rem;
+}
+.card p, .card li { color: var(--muted); }
+.card ul { padding-left: 1.1rem; }
+.card .sdg { list-style: none; padding: 0; }
+.sdg li { margin-bottom: .5rem; }
+.sdg strong { color: var(--green); display: block; }
+
+/* ========== FORMS ========== */
+.form { background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.6rem; display: grid; gap: .4rem; }
+.form label { font-weight: 600; margin-top: .6rem; }
+.form input, .form select, .form textarea {
+  width: 100%; padding: .7rem .8rem; font: inherit; color: var(--text);
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+}
+.form .btn { margin-top: 1rem; justify-self: start; }
+.error { color: var(--off); min-height: 1.1em; font-size: .85rem; }
+.success { color: var(--on); font-weight: 600; }
+
+/* ========== RESULT PANEL ========== */
+.result { background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.6rem; }
+.placeholder { color: var(--muted); }
+.result.on  { border-left: 8px solid var(--on); }
+.result.off { border-left: 8px solid var(--off); }
+.verdict { font-family: Georgia, serif; font-size: 1.6rem; margin-bottom: 1rem; }
+.pump { display: inline-block; padding: .3rem 1rem; border-radius: 999px;
+  color: #fff; font-weight: 700; margin-bottom: 1rem; }
+.pump.on  { background: var(--green); }
+.pump.off { background: var(--off); }
+.gauge { height: 14px; background: var(--bg-alt); border-radius: 999px; position: relative; margin: .5rem 0 .3rem; }
+.gauge-fill { height: 100%; border-radius: 999px; background: var(--green); transition: width .6s; }
+.gauge-mark { position: absolute; left: 30%; top: -4px; bottom: -4px; width: 2px; background: var(--soil); }
+.gauge-label { font-size: .85rem; color: var(--muted); }
+.details { margin-top: 1rem; color: var(--muted); }
+
+/* ========== FOOTER ========== */
+.footer { background: var(--green-dark); color: #fff; text-align: center; padding: 1.5rem 1rem; font-size: .9rem; }
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 760px) {
+  .nav-toggle { display: block; }
+  .nav-links { display: none; flex-direction: column; gap: .8rem; width: 100%; padding: 1rem 0 .5rem; }
+  .nav-links.open { display: flex; }
+  .section { padding: 3rem 0; }
+  .hero { padding: 4rem 0 3.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { transition: none !important; }
+}
+
+</style>
+</head>
+<body>
+
+  <!-- ========== NAVIGATION ========== -->
+  <header class="site-header">
+    <nav class="nav">
+      <a href="#home" class="brand">SmartIrrigate</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">Menu</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#input">Input</a></li>
+        <li><a href="#analysis">Analysis</a></li>
+        <li><a href="#benefits">Benefits</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ========== 1. HOME ========== -->
+    <section id="home" class="hero">
+      <div class="container hero-inner">
+        <h1>AI-Based Smart Irrigation Management System</h1>
+        <p class="lead">
+          A decision-support system that reads soil moisture, temperature and rain
+          forecast, then tells the farmer whether to switch the water pump on or leave it off.
+        </p>
+        <a href="#input" class="btn">Check my field</a>
+      </div>
+    </section>
+
+    <section class="section container" id="features">
+      <h2>Features</h2>
+      <div class="grid grid-4">
+        <article class="card"><h3>Live field inputs</h3><p>Enter soil moisture, temperature and rain prediction in seconds.</p></article>
+        <article class="card"><h3>Instant decision</h3><p>The system decides whether irrigation is required right away.</p></article>
+        <article class="card"><h3>Pump status</h3><p>A clear ON or OFF indicator shows what the pump should do.</p></article>
+        <article class="card"><h3>Works on any device</h3><p>Responsive layout for phones, tablets and desktops.</p></article>
+      </div>
+    </section>
+
+    <!-- ========== 2. INPUT ========== -->
+    <section class="section alt" id="input">
+      <div class="container narrow">
+        <h2>Enter field conditions</h2>
+        <form id="irrigationForm" class="form" novalidate>
+          <label for="moisture">Soil moisture (%)</label>
+          <input type="number" id="moisture" min="0" max="100" step="0.1" placeholder="e.g. 24" required>
+          <small class="error" id="moistureError"></small>
+
+          <label for="temperature">Temperature (°C)</label>
+          <input type="number" id="temperature" min="-10" max="60" step="0.1" placeholder="e.g. 32" required>
+          <small class="error" id="temperatureError"></small>
+
+          <label for="rain">Rain prediction</label>
+          <select id="rain" required>
+            <option value="">Select an option</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+          <small class="error" id="rainError"></small>
+
+          <button type="submit" class="btn">Analyse field</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ========== 3. AI ANALYSIS ========== -->
+    <section class="section container narrow" id="analysis">
+      <h2>AI analysis</h2>
+      <!-- Result is written here by the script below (no alert boxes) -->
+      <div class="result" id="result" aria-live="polite">
+        <p class="placeholder">Submit the field conditions above to see the recommendation.</p>
+      </div>
+    </section>
+
+    <!-- ========== 4. BENEFITS ========== -->
+    <section class="section alt" id="benefits">
+      <div class="container">
+        <h2>Benefits</h2>
+        <div class="grid grid-4">
+          <article class="card"><h3>Water conservation</h3><p>Water is used only when the soil needs it, cutting waste.</p></article>
+          <article class="card"><h3>Increased crop yield</h3><p>Steady moisture levels keep crops healthier and more productive.</p></article>
+          <article class="card"><h3>Reduced manual work</h3><p>Farmers no longer check the soil and the pump by hand.</p></article>
+          <article class="card"><h3>Smart farming</h3><p>Data-driven decisions replace guesswork in daily farm care.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 5. ABOUT ========== -->
+    <section class="section container" id="about">
+      <h2>About the project</h2>
+      <div class="grid grid-3">
+        <article class="card">
+          <h3>Objectives</h3>
+          <ul>
+            <li>Automate the decision to irrigate.</li>
+            <li>Reduce water wastage in farming.</li>
+            <li>Make precision farming simple to use.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Applications</h3>
+          <ul>
+            <li>Small and large farms</li>
+            <li>Greenhouses and nurseries</li>
+            <li>Gardens and landscaping</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>SDG goals</h3>
+          <ul class="sdg">
+            <li><strong>SDG 2</strong> Zero Hunger</li>
+            <li><strong>SDG 6</strong> Clean Water and Sanitation</li>
+            <li><strong>SDG 12</strong> Responsible Consumption and Production</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- ========== 6. CONTACT ========== -->
+    <section class="section alt" id="contact">
+      <div class="container narrow">
+        <h2>Contact us</h2>
+        <form id="contactForm" class="form" novalidate>
+          <label for="name">Name</label>
+          <input type="text" id="name" placeholder="Your name" required>
+          <small class="error" id="nameError"></small>
+
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="you@example.com" required>
+          <small class="error" id="emailError"></small>
+
+          <label for="message">Message</label>
+          <textarea id="message" rows="4" placeholder="How can we help?" required></textarea>
+          <small class="error" id="messageError"></small>
+
+          <button type="submit" class="btn">Send message</button>
+          <p class="success" id="contactSuccess" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>AI-Based Smart Irrigation Management System · BTech IT Mini Project</p>
+  </footer>
+
+  <script>
+// ========== MOBILE NAVIGATION ==========
+const navToggle = document.getElementById("navToggle");
+const navLinks = document.getElementById("navLinks");
+
+navToggle.addEventListener("click", () => {
+  const isOpen = navLinks.classList.toggle("open");
+  navToggle.setAttribute("aria-expanded", isOpen);
+});
+// Close the menu after a link is tapped
+navLinks.querySelectorAll("a").forEach(link =>
+  link.addEventListener("click", () => {
+    navLinks.classList.remove("open");
+    navToggle.setAttribute("aria-expanded", "false");
+  })
+);
+
+// ========== HELPERS ==========
+const MOISTURE_THRESHOLD = 30; // below this value the soil is considered dry
+
+function setError(id, message) {
+  document.getElementById(id).textContent = message;
+}
+
+// ========== AI ANALYSIS: IRRIGATION FORM ==========
+document.getElementById("irrigationForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  const moistureRaw = document.getElementById("moisture").value;
+  const tempRaw = document.getElementById("temperature").value;
+  const rain = document.getElementById("rain").value;
+  const moisture = parseFloat(moistureRaw);
+  const temperature = parseFloat(tempRaw);
+
+  // --- Validation (errors appear under each field, no alert boxes) ---
+  let valid = true;
+  setError("moistureError", "");
+  setError("temperatureError", "");
+  setError("rainError", "");
+
+  if (moistureRaw === "" || isNaN(moisture) || moisture < 0 || moisture > 100) {
+    setError("moistureError", "Enter soil moisture between 0 and 100.");
+    valid = false;
+  }
+  if (tempRaw === "" || isNaN(temperature) || temperature < -10 || temperature > 60) {
+    setError("temperatureError", "Enter a temperature between -10 and 60 °C.");
+    valid = false;
+  }
+  if (rain === "") {
+    setError("rainError", "Choose Yes or No for rain prediction.");
+    valid = false;
+  }
+  if (!valid) return;
+
+  // --- Core decision rule ---
+  const needsWater = moisture < MOISTURE_THRESHOLD;
+  const verdict = needsWater ? "Water Required - Pump ON" : "Water Not Required - Pump OFF";
+  const state = needsWater ? "on" : "off";
+
+  // Extra advice based on the other inputs (does not change the rule above)
+  let note = "";
+  if (needsWater && rain === "Yes") {
+    note = "Rain is predicted, so you may delay the pump and monitor the field.";
+  } else if (needsWater && temperature > 35) {
+    note = "High temperature: soil will dry quickly, so irrigate soon.";
+  } else if (!needsWater) {
+    note = "Soil moisture is at a healthy level.";
+  }
+
+  renderResult({ moisture, temperature, rain, verdict, state, note });
+  document.getElementById("analysis").scrollIntoView({ behavior: "smooth" });
+});
+
+// Build the result panel inside the page
+function renderResult({ moisture, temperature, rain, verdict, state, note }) {
+  const box = document.getElementById("result");
+  box.className = "result " + state;
+  box.innerHTML = `
+    <p class="verdict">${verdict}</p>
+    <span class="pump ${state}">Pump Status: ${state.toUpperCase()}</span>
+    <div class="gauge" aria-hidden="true">
+      <div class="gauge-fill" style="width:${moisture}%"></div>
+      <div class="gauge-mark"></div>
+    </div>
+    <p class="gauge-label">Soil moisture ${moisture}% (threshold ${MOISTURE_THRESHOLD}%)</p>
+    <p class="details">Temperature: ${temperature} °C · Rain predicted: ${rain}</p>
+    ${note ? `<p class="details">${note}</p>` : ""}
+  `;
+}
+
+// ========== CONTACT FORM ==========
+document.getElementById("contactForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const message = document.getElementById("message").value.trim();
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const success = document.getElementById("contactSuccess");
+
+  let valid = true;
+  setError("nameError", "");
+  setError("emailError", "");
+  setError("messageError", "");
+  success.textContent = "";
+
+  if (!name) { setError("nameError", "Enter your name."); valid = false; }
+  if (!emailPattern.test(email)) { setError("emailError", "Enter a valid email address."); valid = false; }
+  if (!message) { setError("messageError", "Enter a message."); valid = false; }
+  if (!valid) return;
+
+  // Demo only: no server, so just confirm on the page
+  success.textContent = `Thank you, ${name}. Your message has been sent.`;
+  this.reset();
+});
+
+</script>
+</body>
+</html>
